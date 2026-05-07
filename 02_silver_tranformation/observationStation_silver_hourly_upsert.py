@@ -31,7 +31,6 @@ silver_updates_df = bronze_df.select(
     F.expr("observation_data:properties.temperature.value").cast("float").alias("temp_c"),
     F.expr("observation_data:properties.dewpoint.value").cast("float").alias("dewpoint_c"),
     F.expr("observation_data:properties.relativeHumidity.value").cast("float").alias("humidity_pct"),
-    F.expr("observation_data:properties.windSpeed.value").cast("float").alias("wind_speed_kph"),
     F.expr("observation_data:properties.barometricPressure.value").cast("float").alias("pressure_pa"),
     F.expr("observation_data:properties.windSpeed.value").cast("float").alias("windspeed_kmph"),
     F.expr("observation_data:properties.windGust.value").cast("float").alias("windgust_kmph"),
@@ -68,7 +67,6 @@ else:
             silver_updates_df.alias("source"),
             "target.station_id = source.station_id AND target.observation_time = source.observation_time"
         )
-        .whenMatchedUpdateAll()
         .whenNotMatchedInsertAll()
         .execute()
     )

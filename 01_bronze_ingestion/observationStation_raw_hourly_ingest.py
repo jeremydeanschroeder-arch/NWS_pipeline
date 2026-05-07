@@ -22,8 +22,7 @@ HEADERS = {"User-Agent": f"(Databricks Weather Pipeline, {EMAIL})"}
 # --- 3. HELPER FUNCTIONS ---
 def get_authorized_stations(wfo_id="OAX"):
     url = f"https://api.weather.gov/offices/{wfo_id}"
-    headers = {"User-Agent": "(your-email@example.com)"}
-    
+    headers = HEADERS
     try:
         resp = requests.get(url, headers=headers)
         data = resp.json()
