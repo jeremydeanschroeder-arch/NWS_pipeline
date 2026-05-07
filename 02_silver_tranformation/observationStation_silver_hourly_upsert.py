@@ -25,7 +25,14 @@ silver_updates_df = bronze_df.select(
 
     # Extracting the NWS timestamp and rounding down to the hour
     F.expr("observation_data:properties.timestamp").cast("timestamp").alias("observation_time"),
-    F.date_trunc("hour", F.expr("observation_data:properties.timestamp").cast("timestamp")).alias("observation_hour"),
+    
+    #Round to closest hour: Add 1800 seconds (30 mins) then truncate
+    F.date_trunc(
+        "hour", 
+        F.col("observation_time") + F.expr("INTERVAL 30 MINUTES")
+    ).alias("observation_hour"),
+    
+    #F.date_trunc("hour", F.expr("observation_data:properties.timestamp").cast("timestamp")).alias("observation_hour"),
     
     # Extracting weather metrics
     F.expr("observation_data:properties.temperature.value").cast("float").alias("temp_c"),
@@ -49,6 +56,10 @@ silver_updates_df = bronze_df.select(
 #display(silver_updates_df.limit(15))
 
 # --- STAGE 3: Upsert (Merge) Logic ---
+
+#deup the source table prior to upsert
+silver_updates_df = silver_updates_df.dropDuplicates(["station_id", "observation_hour"])
+
 # Check if the table exists. If not, create it with the first batch of data.
 if not spark.catalog.tableExists(silver_table_path):
     print(f"Creating new Silver table: {silver_table_path}")
@@ -67,6 +78,7 @@ else:
             silver_updates_df.alias("source"),
             "target.station_id = source.station_id AND target.observation_time = source.observation_time"
         )
+        .whenMatchedUpdateAll()
         .whenNotMatchedInsertAll()
         .execute()
     )
